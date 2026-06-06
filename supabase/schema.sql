@@ -202,11 +202,10 @@ begin
       ), '[]'::jsonb) from filas
     ),
     'ganador', (
-      select case when count(*) = 0 then null else
-        jsonb_build_object('id', id, 'nombre', nombre, 'acumulado', acumulado)
-      end
+      select jsonb_build_object('id', id, 'nombre', nombre, 'acumulado', acumulado)
       from filas
-      where acumulado = (select max(acumulado) from filas) and acumulado > 0
+      where acumulado > 0
+      order by acumulado desc, nombre
       limit 1
     )
   ) into resultado;
@@ -214,6 +213,10 @@ begin
   return resultado;
 end;
 $$;
+
+-- La función es SECURITY DEFINER: solo usuarios autenticados pueden ejecutarla.
+revoke execute on function public.resultados_concurso(uuid) from anon, public;
+grant execute on function public.resultados_concurso(uuid) to authenticated;
 
 -- ============================================================================
 -- 7. SEGURIDAD (Row Level Security)
